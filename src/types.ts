@@ -4,6 +4,8 @@ export type Limitie = {
     id: string;
     promise: Promise<null>;
   };
+  // Higher level API for reserving a single token.
+  request: () => Promise<null>;
   // Remove reservation.
   cancel: (reservationId: string) => void;
   // Update the number of pooled tokens. Useful for updating the number of tokens from an external source.
@@ -15,20 +17,27 @@ export type Limitie = {
 };
 
 export type LimitieConfig = {
+  // Interval, in ms, after which regen is added to pooled tokens. Defaults to 1000.
+  interval?: number; // in ms
+} & AtLeastOne<{
   tokens: {
-    // Maximum number of tokens.
-    max: number;
     // Number of tokens to add every interval.
     regen: number;
+    // Maximum number of tokens. Defaults to regen.
+    max?: number;
     // Initial number of tokens. Defaults to max.
     initial?: number;
   };
-  // Interval, in ms, after which regen is added to pooled tokens. Defaults to 1000.
-  interval?: number; // in ms
-};
+  // Higher level abstraction than tokens. These are both equivalent to 10 requests per second
+  // { tokens: { regen: 10, max: 10 }, interval: 1000 }
+  // { requests: 10, interval: 1000 }
+  requests: number;
+}>
 
 export type LimitieReservation = {
   id: string;
   tokens: number;
   callback: () => void;
 };
+
+export type AtLeastOne<T> = Partial<T> & { [K in keyof T]: Required<Pick<T, K>> }[keyof T];

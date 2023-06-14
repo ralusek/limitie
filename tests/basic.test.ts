@@ -91,7 +91,7 @@ describe('createLimitie function', () => {
   });
 
   it('regenerates tokens over time', async () => {
-    limitie.reserve(config.tokens.max); // Use up all tokens
+    limitie.reserve(config.tokens!.max); // Use up all tokens
     expect(limitie.getPooledTokens()).toBe(5);
     // expect(limitie.getTokenBacklog()).toBe(0);
     await new Promise((resolve) => setTimeout(resolve, config.interval! * 2)); // Wait for 2 regen intervals
@@ -105,6 +105,6 @@ describe('createLimitie function', () => {
 
   it('does not exceed maximum tokens after regen', async () => {
     await new Promise((resolve) => setTimeout(resolve, config.interval! * 3)); // Wait for 3 regen intervals
-    expect(limitie.getPooledTokens()).toBe(config.tokens.max);
+    expect(limitie.getPooledTokens()).toBe(config.tokens!.max);
   });
 });

@@ -1,7 +1,7 @@
 {
   "name": "limitie",
-  "version": "0.0.0",
-  "description": "Library for managing rate limits",
+  "version": "0.0.1",
+  "description": "Library for managing rate limits. Has high level requests limiter, and low level token limiter, and will queue requests if limit is reached.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -11,7 +11,20 @@
     "build": "tsc",
     "test": "jest"
   },
-  "keywords": [],
+  "keywords": [
+    "rate",
+    "limit",
+    "limiter",
+    "queue",
+    "requests",
+    "tokens",
+    "await",
+    "promise",
+    "async",
+    "awaitable",
+    "typescript",
+    "ts"
+  ],
   "author": "Tomas Savigliano <ralusek@gmail.com>",
   "license": "ISC",
   "devDependencies": {

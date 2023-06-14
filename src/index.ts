@@ -4,9 +4,19 @@ import { Limitie, LimitieConfig, LimitieReservation } from './types';
 export default function createLimitie(
   config: LimitieConfig
 ): Limitie {
+  if (config.requests !== undefined) {
+    if (config.tokens) throw new Error(`Cannot specify both tokens and requests in config.`);
+    if (typeof config.requests !== 'number' || isNaN(config.requests)) throw new Error(`requests must be a number.`);
+    config.tokens = {
+      regen: config.requests,
+    };
+  }
+  if (!config.tokens) throw new Error(`Must specify either tokens or requests in config.`);
+
   config = {
     tokens: {
       ...config.tokens,
+      max: config.tokens.max ?? config.tokens.regen,
     },
     interval: config.interval ?? 1000,
   };
@@ -28,6 +38,8 @@ export default function createLimitie(
     lastRegen: startedAt,
   };
 
+  // TODO change this to a linked list. Would improve .cancel performance,
+  // as well as .shift performance inside of attempt().
   const reservations: LimitieReservation[] = [];
 
   let activeTimeout: NodeJS.Timeout | null = null;
@@ -62,7 +74,7 @@ export default function createLimitie(
   }
 
   function reserve(tokens: number = 1) {
-    if (tokens > config.tokens.max) throw new Error(`Unable to reserve ${tokens} number of tokens, max tokens specified in config is ${config.tokens.max}.`);
+    if (tokens > config.tokens!.max!) throw new Error(`Unable to reserve ${tokens} number of tokens, max tokens specified in config is ${config.tokens!.max}.`);
     const id = `${ Math.random().toString(36).slice(2) }${ Date.now().toString(36) }`;
 
     let deferred: ((arg: null) => void) | null = null;
@@ -85,6 +97,11 @@ export default function createLimitie(
     };
   }
 
+  // Higher level API for reserving a single token.
+  function request() {
+    return reserve(1).promise;
+  }
+
   function cancel(reservationId: string) {
     const reservationIndex = reservations.findIndex((reservation) => reservation.id === reservationId);
     if (reservationIndex === -1) throw new Error(`Unable to cancel reservation, could not find reservation with id ${reservationId}.`);
@@ -100,8 +117,8 @@ export default function createLimitie(
 
   function handleRegen() {
     const intervalsSinceLastRegen = Math.floor((Date.now() - state.lastRegen) / config.interval!);
-    const tokensRegenerated = intervalsSinceLastRegen * config.tokens.regen;
-    state.tokens.pooled = Math.min(state.tokens.pooled + tokensRegenerated, config.tokens.max);
+    const tokensRegenerated = intervalsSinceLastRegen * config.tokens!.regen;
+    state.tokens.pooled = Math.min(state.tokens.pooled + tokensRegenerated, config.tokens!.max!);
     state.lastRegen = state.lastRegen + (intervalsSinceLastRegen * config.interval!);
   }
 
@@ -119,7 +136,7 @@ export default function createLimitie(
       if (!reservationId || (reservation.id === reservationId)) {
         const tokenDeficit = pooledTokens - claimedTokens;
         if (tokenDeficit >= 0) return 0;
-        return Math.ceil(Math.abs(tokenDeficit) / config.tokens.regen) * config.interval!;
+        return Math.ceil(Math.abs(tokenDeficit) / config.tokens!.regen) * config.interval!;
       }
     }
 
@@ -128,6 +145,7 @@ export default function createLimitie(
 
   const limitie: Limitie = {
     reserve,
+    request,
     cancel,
     update,
     getPooledTokens,
