@@ -115,6 +115,34 @@ export default function createLimitie(
     return state.tokens.pooled;
   }
 
+  function getTokenBalance(
+    reservationId?: string,
+  ) {
+    const pooledTokens = getPooledTokens();
+
+    let claimedTokens = 0;
+    let matched = false;
+    for (let i = 0; i < reservations.length; i++) {
+      const reservation = reservations[i];
+      claimedTokens += reservation.tokens;
+      if (reservation.id === reservationId) {
+        matched = true;
+        break;
+      }
+    }
+
+    if (!matched && reservationId) throw new Error(`Unable to find reservation with id ${reservationId}.`);
+
+    const balance = pooledTokens - claimedTokens;
+    return balance;
+  }
+
+  // Returns time, in ms, until the specified balance 
+  function getTimeFromTokenBalance(balance: number) {
+    if(balance >= 0) return 0;
+    return Math.ceil(Math.abs(balance) / config.tokens!.regen) * config.interval!;
+  }
+
   function handleRegen() {
     const intervalsSinceLastRegen = Math.floor((Date.now() - state.lastRegen) / config.interval!);
     const tokensRegenerated = intervalsSinceLastRegen * config.tokens!.regen;
@@ -127,20 +155,14 @@ export default function createLimitie(
     // The reservation to check. If not provided, will return the time until the next reservation is ready.
     reservationId?: string,
   ) {
-    const pooledTokens = getPooledTokens();
+    const balance = getTokenBalance(reservationId || reservations[0]?.id);
+    return getTimeFromTokenBalance(balance);
+  }
 
-    let claimedTokens = 0;
-    for (let i = 0; i < reservations.length; i++) {
-      const reservation = reservations[i];
-      claimedTokens += reservation.tokens;
-      if (!reservationId || (reservation.id === reservationId)) {
-        const tokenDeficit = pooledTokens - claimedTokens;
-        if (tokenDeficit >= 0) return 0;
-        return Math.ceil(Math.abs(tokenDeficit) / config.tokens!.regen) * config.interval!;
-      }
-    }
-
-    throw new Error(`Unable to find reservation with id ${reservationId}.`);
+  function getWaitTime(estimatedAdditionalTokens: number = 0) {
+    const balance = getTokenBalance();
+    const timeUntilReady = getTimeFromTokenBalance(balance - estimatedAdditionalTokens);
+    return timeUntilReady;
   }
 
   const limitie: Limitie = {
@@ -149,7 +171,9 @@ export default function createLimitie(
     cancel,
     update,
     getPooledTokens,
+    getTokenBalance,
     getTimeUntilReady,
+    getWaitTime,
   };
 
   return limitie;

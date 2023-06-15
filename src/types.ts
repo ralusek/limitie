@@ -12,8 +12,12 @@ export type Limitie = {
   update: (pooled: number) => void;
   // Gets the number of pooled tokens.
   getPooledTokens: () => number;
+  // Gets the number of pooled tokens - reserved tokens.
+  getTokenBalance: (reservationId?: string) => number;
   // Gets time, in ms, until the reservation is ready.
   getTimeUntilReady: (reservationId?: string) => number;
+  // Gets the wait time, in ms, until all reservations are handled, an an optinally speciafied number of additional tokens would be ready.
+  getWaitTime: (additionalTokens?: number) => number;
 };
 
 export type LimitieConfig = {

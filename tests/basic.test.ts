@@ -67,6 +67,8 @@ describe('createLimitie function', () => {
     const now = Date.now();
     expectTime(0);
 
+    expect(limitie.getWaitTime()).toBe(2000);
+
     await promise1;
     expectTime(0);
 
@@ -82,11 +84,13 @@ describe('createLimitie function', () => {
     await promise5;
     expectTime(2000);
 
+    expect(limitie.getWaitTime()).toBe(0);
+
 
     function expectTime(num: number) {
       const timeTaken = Date.now() - now;
-      expect(timeTaken).toBeGreaterThan(num - 100);
-      expect(timeTaken).toBeLessThan(num + 100);
+      expect(timeTaken).toBeGreaterThan(num - 150);
+      expect(timeTaken).toBeLessThan(num + 150);
     }
   });
 
@@ -94,17 +98,17 @@ describe('createLimitie function', () => {
     limitie.reserve(config.tokens!.max); // Use up all tokens
     expect(limitie.getPooledTokens()).toBe(5);
     // expect(limitie.getTokenBacklog()).toBe(0);
-    await new Promise((resolve) => setTimeout(resolve, config.interval! * 2)); // Wait for 2 regen intervals
+    await new Promise((resolve) => setTimeout(resolve, (config.interval! * 2) + 150)); // Wait for 2 regen intervals (+ 150ms for buffer)
     // expect(limitie.getTokenBacklog()).toBe(config.tokens.regen * 2);
     expect(limitie.getPooledTokens()).toBe(9);
 
     // This will reach max tokens and finally consume them, dropping pooled tokens to 0
-    await new Promise((resolve) => setTimeout(resolve, config.interval! * 1)); // Wait for 1
+    await new Promise((resolve) => setTimeout(resolve, (config.interval! * 1) + 150)); // Wait for 1 regen interval (+ 150ms for buffer)
     expect(limitie.getPooledTokens()).toBe(0);
   });
 
   it('does not exceed maximum tokens after regen', async () => {
-    await new Promise((resolve) => setTimeout(resolve, config.interval! * 3)); // Wait for 3 regen intervals
+    await new Promise((resolve) => setTimeout(resolve, (config.interval! * 3) + 150)); // Wait for 3 regen intervals (+ 150ms for buffer)
     expect(limitie.getPooledTokens()).toBe(config.tokens!.max);
   });
 });

@@ -1,6 +1,6 @@
 {
   "name": "limitie",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "Library for managing rate limits. Has high level requests limiter, and low level token limiter, and will queue requests if limit is reached.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
